@@ -1,5 +1,5 @@
 ---
-title: "VR"
+title: "VR_HE"
 output: html_document
 date: "2025-01-15"
 ---
@@ -141,9 +141,7 @@ d_table
 
 ```
 
-## Questions
-
-## 1. a. Does VR experience deliver an increased motivation to learn / positive consolidation of course material / increase in ocean empathy? YES
+## 1. Positive effect
 
 ```{r mod-positive}
 
@@ -186,14 +184,6 @@ pred_emp <- d %>%
   mutate(Model = "PEB Motivation")
 
 df_positive <- rbind(pred_mot, pred_cons, pred_emp)
-# 
-# d_positive <- d %>% select(Q1, Q2, Q8) %>% 
-#   pivot_longer(cols = c(Q1, Q2, Q8),
-#                names_to = "Model",
-#                values_to = "values") %>% 
-#   mutate(Model = case_when(Model == "Q1" ~ "Motivation to learn",
-#                            Model == "Q2" ~ "Knowledge Consolidation",
-#                            TRUE ~ "PEB Motivation"))
 
 df_positive_trimmed <- df_positive %>%
   group_by(Model) %>%
@@ -224,8 +214,7 @@ ggsave("figures/FigSupp.pdf", fig_positive, width = 6, height = 3, units = "in",
 
 ```
 
-2. Do these changes depend on whether students were in the treatment or not? NO 
-i.e. no influence of the study, no need to contextualize it
+2. Treatment effect
 
 ```{r mod-treat}
 
@@ -299,7 +288,7 @@ ggsave("figures/Fig3.pdf", fig_treat, width = 6, height = 3, units = "in", dpi =
 
 ```
 
-3. Is motivation to learn / ocean empathy predicted by the sensory experience + cybersickness + usability + feeling of immersion? TO SOME EXTENT (but no if poisson is right)
+3. Predictors
 
 ```{r mod-predict}
 # Q3 = sensory
@@ -315,7 +304,7 @@ hypothesis(mod_mot_predict, "Q3 > 0") # 0.97
 hypothesis(mod_mot_predict, "Q4 > 0") # 0
 hypothesis(mod_mot_predict, "Q5 > 0") # 0.42
 hypothesis(mod_mot_predict, "Q6 > 0") # 0.76
-hypothesis(mod_mot_predict, "Q7 > 0") # 0.76
+hypothesis(mod_mot_predict, "Q7 > 0") # 0.2
 
 # knowledge consolidation - Q8
 mod_cons_predict <- brm(Q2 ~ Q3 + Q4 + Q5 + Q6 + Q7 + (1|Group), data = d, iter = 3000, control = list(adapt_delta = 0.99))
@@ -324,7 +313,7 @@ hypothesis(mod_cons_predict, "Q3 > 0") # 0.99
 hypothesis(mod_cons_predict, "Q4 > 0") # 0.03
 hypothesis(mod_cons_predict, "Q5 > 0") # 0.26
 hypothesis(mod_cons_predict, "Q6 > 0") # 0.17
-hypothesis(mod_cons_predict, "Q7 > 0") # 0.76
+hypothesis(mod_cons_predict, "Q7 > 0") # 0.31
 
 # ocean empathy - Q8
 mod_emp_predict <- brm(Q8 ~ Q3 + Q4 + Q5 + Q6 + Q7 + (1|Group), data = d, iter = 3000, control = list(adapt_delta = 0.99))
@@ -333,7 +322,7 @@ hypothesis(mod_emp_predict, "Q3 > 0") # 0.91
 hypothesis(mod_emp_predict, "Q4 > 0") # 0
 hypothesis(mod_emp_predict, "Q5 > 0") # 0.44
 hypothesis(mod_emp_predict, "Q6 > 0") # 0.76
-hypothesis(mod_emp_predict, "Q7 > 0") # 0.76
+hypothesis(mod_emp_predict, "Q7 > 0") # 0.22
 
 ```
 
@@ -466,7 +455,7 @@ ggsave("figures/Fig4.png", fig_predict, width = 6, height = 3, units = "in", dpi
 ggsave("figures/Fig4.pdf", fig_predict, width = 6, height = 3, units = "in", dpi = 600)
 ```
 
-4. Real-life footage vs CGI (Q7)
+4. CGI acceptance
 
 ```{r mod-CGI}
 
@@ -499,5 +488,4 @@ hypothesis(mod_mot_CGI, "Q7Real > Q7CGI")
 mod_emp_CGI <- brm(Q8 ~ 0 + Q7 + (1|Group), data = d_CGI, iter = 3000, control = list(adapt_delta = 0.99))
 summary(mod_emp_CGI)
 hypothesis(mod_emp_CGI, "Q7Real > Q7CGI") 
-
 ```
