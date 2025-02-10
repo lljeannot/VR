@@ -17,7 +17,7 @@ On the project main page on Anonymous GitHub, click on the button `Download Repo
 
 This project is organized in 2 folders:
   
-* :file_folder:	`data` folder contains 1 dataset (see **2.2 Datasets description**).
+* :file_folder:	`data` folder contains 1 dataset (see **2.2 Dataset description**).
 * :file_folder:	`figures` folder contains 4 figures.
 
 
@@ -41,7 +41,7 @@ The _VR_HE.Rmd_ code is formatted in Rmarkdown and contains all R-based analyses
 
 ### 2.4 Figures
 
-All figures are available in PNG and PDF format in the `figures` folder and can be reproduced by running the script. 
+All R-generated figures are available in PNG and PDF format in the `figures` folder and can be reproduced by running the script. 
 
 ## 3. Reproducibility parameters
 
