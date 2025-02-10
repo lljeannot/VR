@@ -1,0 +1,503 @@
+---
+title: "VR"
+output: html_document
+date: "2025-01-15"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Import packages
+
+```{r packages}
+
+library(tidybayes)
+library(modelr)
+library(tidyverse)
+library(brms)
+library(ggridges)
+library(ggpubr)
+library(ggpattern)
+
+```
+
+## Import data
+
+```{r data}
+
+d <- read.csv("VR_data.csv") %>% 
+  mutate(Treatment = ifelse(Group %in% c(1, 3), "Treatment", "Control"))
+
+boxplot(d[3:10],ylim=c(0,10))
+
+# Q4 and Q5 are switched compared to the others 
+# (positive is 1, negative is 10). Swap over so 
+# they match
+
+d[,6] <- 11-d[,6]
+d[,7] <- 11-d[,7]
+
+```
+
+## Data exploration
+
+```{r data-exp}
+
+# replot by group
+d_long <- pivot_longer(d,cols=3:10)
+
+# boxplot
+
+fig_init <- ggplot(d_long %>% 
+  mutate(name = factor(case_when(name == "Q1" ~ "Motivation to learn",
+                          name == "Q2" ~ "Knowledge Consolidation",
+                          name == "Q3" ~ "Sensory Experience",
+                          name == "Q4" ~ "Absence of Cybersickness",
+                          name == "Q5" ~ "Ease of Use",
+                          name == "Q6" ~ "Presence",
+                          name == "Q7" ~ "CGI Acceptance",
+                          TRUE ~ "PEB Motivation"),
+                       levels = c("Motivation to learn", "Knowledge Consolidation", "Sensory Experience", "Absence of Cybersickness", 
+                                  "Ease of Use", "Presence", "CGI Acceptance", "PEB Motivation"))),
+  aes(x = name, y = value, fill = name)) +
+  geom_hline(yintercept = 5, col = "red", linetype = "dashed") +
+  geom_boxplot(outlier.shape = NA, alpha = 0.7) +
+  geom_jitter(aes(fill = name), pch = 21, col = "black", height = 0, width = 0.2, alpha = 0.8) +
+  scale_fill_viridis_d(name = "", option = "viridis", direction = -1) +
+  scale_colour_viridis_d(name = "", option = "viridis", direction = -1) +
+  scale_y_continuous(breaks = 0:10) +
+  labs(x = "",
+       y = "Value") +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        legend.background = element_rect(fill = NA)) +
+  coord_cartesian(ylim = c(0, 10)) +
+  guides(fill = "none", col = "none")
+
+fig_init
+
+ggsave("figures/Fig2.png", fig_init, width = 6, height = 6, units = "in", dpi = 600)
+ggsave("figures/Fig2.pdf", fig_init, width = 6, height = 6, units = "in", dpi = 600)
+
+# Table 1
+
+d_table <- d %>% 
+  mutate(mean_Q1 = mean(Q1, na.rm = T),
+         median_Q1 = median(Q1, na.rm = T),
+         SD_Q1 = sd(Q1, na.rm = T),
+         min_Q1 = min(Q1, na.rm = T),
+         max_Q1 = max(Q1, na.rm = T),
+         mean_Q2 = mean(Q2, na.rm = T),
+         median_Q2 = median(Q2, na.rm = T),
+         SD_Q2 = sd(Q2, na.rm = T),
+         min_Q2 = min(Q2, na.rm = T),
+         max_Q2 = max(Q2, na.rm = T),
+         mean_Q3 = mean(Q3, na.rm = T),
+         median_Q3 = median(Q3, na.rm = T),
+         SD_Q3 = sd(Q3, na.rm = T),
+         min_Q3 = min(Q3, na.rm = T),
+         max_Q3 = max(Q3, na.rm = T),
+         mean_Q4 = mean(Q4, na.rm = T),
+         median_Q4 = median(Q4, na.rm = T),
+         SD_Q4 = sd(Q4, na.rm = T),
+         min_Q4 = min(Q4, na.rm = T),
+         max_Q4 = max(Q4, na.rm = T),
+         mean_Q5 = mean(Q5, na.rm = T),
+         median_Q5 = median(Q5, na.rm = T),
+         SD_Q5 = sd(Q5, na.rm = T),
+         min_Q5 = min(Q5, na.rm = T),
+         max_Q5 = max(Q5, na.rm = T),
+         mean_Q6 = mean(Q6, na.rm = T),
+         median_Q6 = median(Q6, na.rm = T),
+         SD_Q6 = sd(Q6, na.rm = T),
+         min_Q6 = min(Q6, na.rm = T),
+         max_Q6 = max(Q6, na.rm = T),
+         mean_Q7 = mean(Q7, na.rm = T),
+         median_Q7 = median(Q7, na.rm = T),
+         SD_Q7 = sd(Q7, na.rm = T),
+         min_Q7 = min(Q7, na.rm = T),
+         max_Q7 = max(Q7, na.rm = T),
+         mean_Q8 = mean(Q8, na.rm = T),
+         median_Q8 = median(Q8, na.rm = T),
+         SD_Q8 = sd(Q8, na.rm = T),
+         min_Q8 = min(Q8, na.rm = T),
+         max_Q8 = max(Q8, na.rm = T)) %>% 
+  distinct(mean_Q1, median_Q1, SD_Q1, max_Q1, min_Q1,
+           mean_Q2, median_Q2, SD_Q2, max_Q2, min_Q2,
+           mean_Q3, median_Q3, SD_Q3, max_Q3, min_Q3,
+           mean_Q4, median_Q4, SD_Q4, max_Q4, min_Q4,
+           mean_Q5, median_Q5, SD_Q5, max_Q5, min_Q5,
+           mean_Q6, median_Q6, SD_Q6, max_Q6, min_Q6,
+           mean_Q7, median_Q7, SD_Q7, max_Q7, min_Q7,
+           mean_Q8, median_Q8, SD_Q8, max_Q8, min_Q8) %>% 
+  pivot_longer(cols = everything(), 
+    names_to = c(".value", "Question"),
+    names_pattern = "(.*)_(Q[1-8])")
+
+d_table
+
+```
+
+## Questions
+
+## 1. a. Does VR experience deliver an increased motivation to learn / positive consolidation of course material / increase in ocean empathy? YES
+
+```{r mod-positive}
+
+# motivation to learn - Q1
+mod_mot <- brm(Q1 ~ 1 + (1|Group), data = d, iter = 3000, control = list(adapt_delta = 0.99))
+summary(mod_mot)
+parnames(mod_mot)
+hypothesis(mod_mot, "Intercept > 5")
+
+# consolidation of course material - Q2
+mod_cons <- brm(Q2 ~ 1 + (1|Group), data = d, iter = 3000, control = list(adapt_delta = 0.99))
+summary(mod_cons)
+parnames(mod_cons)
+hypothesis(mod_cons, "Intercept > 5")
+
+# ocean empathy - Q8
+mod_emp <- brm(Q8 ~ 1 + (1|Group), data = d, iter = 3000, control = list(adapt_delta = 0.99))
+summary(mod_emp)
+parnames(mod_emp)
+hypothesis(mod_emp, "Intercept > 5")
+
+```
+
+
+```{r plot-positive}
+
+pred_mot <- d %>%
+  data_grid(Group) %>%  
+  add_epred_draws(mod_mot, ndraws = 1000, allow_new_levels = T) %>% 
+  mutate(Model = "Motivation to learn")
+
+pred_cons <- d %>%
+  data_grid(Group) %>%  
+  add_epred_draws(mod_cons, ndraws = 1000, allow_new_levels = T) %>% 
+  mutate(Model = "Knowledge Consolidation")
+
+pred_emp <- d %>%
+  data_grid(Group) %>%  
+  add_epred_draws(mod_emp, ndraws = 1000, allow_new_levels = T) %>% 
+  mutate(Model = "PEB Motivation")
+
+df_positive <- rbind(pred_mot, pred_cons, pred_emp)
+# 
+# d_positive <- d %>% select(Q1, Q2, Q8) %>% 
+#   pivot_longer(cols = c(Q1, Q2, Q8),
+#                names_to = "Model",
+#                values_to = "values") %>% 
+#   mutate(Model = case_when(Model == "Q1" ~ "Motivation to learn",
+#                            Model == "Q2" ~ "Knowledge Consolidation",
+#                            TRUE ~ "PEB Motivation"))
+
+df_positive_trimmed <- df_positive %>%
+  group_by(Model) %>%
+  mutate(epred_cutoff_high = quantile(.epred, 0.975),
+         epred_cutoff_low = quantile(.epred, 0.025)) %>%  
+  filter(.epred <= epred_cutoff_high & .epred >= epred_cutoff_low)
+
+fig_positive <- ggplot(df_positive %>% mutate(Model = factor(Model, levels = c("Motivation to learn", "Knowledge Consolidation", "PEB Motivation"))), 
+                    aes(x = Model, y = .epred)) +
+  stat_pointinterval(aes(fill = Model), point_size = 3, color = "black",
+                     position = position_dodge(width = 0.9, preserve = "total")) +
+  geom_violin_pattern(aes(fill = Model), pattern = "none", pattern_fill = "transparent",
+                      alpha = 0.7, linewidth = 0.3, color = "black") +
+  scale_fill_manual(values = c("#fde624", "#a0da3a", "#440053")) +
+  labs(x = "Posterior prediction") +
+  theme_classic() +
+  theme(axis.title.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        legend.background = element_rect(fill = NA)) +
+  guides(col = "none", fill = "none") +
+  coord_cartesian(ylim = c(3, 10))
+
+fig_positive
+
+ggsave("figures/FigSupp.png", fig_positive, width = 6, height = 3, units = "in", dpi = 600)
+ggsave("figures/FigSupp.pdf", fig_positive, width = 6, height = 3, units = "in", dpi = 600)
+
+```
+
+2. Do these changes depend on whether students were in the treatment or not? NO 
+i.e. no influence of the study, no need to contextualize it
+
+```{r mod-treat}
+
+# motivation to learn - Q1
+mod_mot_treat <- brm(Q1 ~ Treatment + (1|Group), data = d, iter = 3000, control = list(adapt_delta = 0.99))
+summary(mod_mot_treat)
+parnames(mod_mot_treat)
+hypothesis(mod_mot_treat, "TreatmentTreatment < 0") #motivation was lower with treatment
+
+# consolidation of course material - Q2
+mod_cons_treat <- brm(Q2 ~ Treatment + (1|Group), data = d, iter = 3000, control = list(adapt_delta = 0.99))
+summary(mod_cons_treat)
+parnames(mod_cons_treat)
+hypothesis(mod_cons_treat, "TreatmentTreatment > 0")
+
+# ocean empathy - Q8
+mod_emp_treat <- brm(Q8 ~ Treatment + (1|Group), data = d, iter = 3000, control = list(adapt_delta = 0.99))
+summary(mod_emp_treat)
+parnames(mod_emp_treat)
+hypothesis(mod_emp_treat, "TreatmentTreatment > 0")
+
+```
+
+```{r plot-treat}
+
+pred_mot_treat <- d %>%
+  data_grid(Group, Treatment) %>%  
+  add_epred_draws(mod_mot_treat, ndraws = 1000, allow_new_levels = T) %>% 
+  mutate(Model = "Motivation to learn")
+
+pred_cons_treat <- d %>%
+  data_grid(Group, Treatment) %>%  
+  add_epred_draws(mod_cons_treat, ndraws = 1000, allow_new_levels = T) %>% 
+  mutate(Model = "Knowledge Consolidation")
+
+pred_emp_treat <- d %>%
+  data_grid(Group, Treatment) %>%  
+  add_epred_draws(mod_emp_treat, ndraws = 1000, allow_new_levels = T) %>% 
+  mutate(Model = "PEB Motivation")
+
+df_treat <- rbind(pred_mot_treat, pred_cons_treat, pred_emp_treat)
+
+df_treat_trimmed <- df_treat %>%
+  group_by(Treatment, Model) %>%
+  mutate(epred_cutoff_high = quantile(.epred, 0.975),
+         epred_cutoff_low = quantile(.epred, 0.025)) %>%  
+  filter(.epred <= epred_cutoff_high & .epred >= epred_cutoff_low)
+
+fig_treat <- ggplot(df_treat_trimmed %>% mutate(Model = factor(Model, levels = c("Motivation to learn", "Knowledge Consolidation", "PEB Motivation"))), 
+                    aes(x = Model, y = .epred)) +
+  stat_pointinterval(aes(fill = interaction(Treatment, Model)), point_size = 3, color = "black",
+                     position = position_dodge(width = 0.9, preserve = "total")) +
+  geom_violin_pattern(aes(pattern = Treatment,
+                          fill = interaction(Treatment, Model)), pattern_fill = "transparent",
+                      alpha = 0.7, linewidth = 0.3, color = "black") +
+  scale_fill_manual(values = c("#fde624", "#fde624", "#a0da3a", "#a0da3a", "#440053", "#440053")) +
+  scale_pattern_manual(values = c("Control" = "none", "Treatment" = "stripe")) +
+  labs(x = "Posterior prediction") +
+  theme_classic() +
+  theme(axis.title.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        legend.background = element_rect(fill = NA)) +
+  guides(col = "none", fill = "none") +
+  coord_cartesian(ylim = c(3, 10))
+
+fig_treat
+
+ggsave("figures/Fig3.png", fig_treat, width = 6, height = 3, units = "in", dpi = 600)
+ggsave("figures/Fig3.pdf", fig_treat, width = 6, height = 3, units = "in", dpi = 600)
+
+```
+
+3. Is motivation to learn / ocean empathy predicted by the sensory experience + cybersickness + usability + feeling of immersion? TO SOME EXTENT (but no if poisson is right)
+
+```{r mod-predict}
+# Q3 = sensory
+# Q4 = non-nausea
+# Q5 = usability
+# Q6 = immersion
+
+# motivation to learn - Q1
+mod_mot_predict <- brm(Q1 ~ Q3 + Q4 + Q5 + Q6 + Q7 + (1|Group), data = d, iter = 3000, control = list(adapt_delta = 0.99))
+summary(mod_mot_predict)
+parnames(mod_mot_predict)
+hypothesis(mod_mot_predict, "Q3 > 0") # 0.97
+hypothesis(mod_mot_predict, "Q4 > 0") # 0
+hypothesis(mod_mot_predict, "Q5 > 0") # 0.42
+hypothesis(mod_mot_predict, "Q6 > 0") # 0.76
+hypothesis(mod_mot_predict, "Q7 > 0") # 0.76
+
+# knowledge consolidation - Q8
+mod_cons_predict <- brm(Q2 ~ Q3 + Q4 + Q5 + Q6 + Q7 + (1|Group), data = d, iter = 3000, control = list(adapt_delta = 0.99))
+summary(mod_cons_predict)
+hypothesis(mod_cons_predict, "Q3 > 0") # 0.99
+hypothesis(mod_cons_predict, "Q4 > 0") # 0.03
+hypothesis(mod_cons_predict, "Q5 > 0") # 0.26
+hypothesis(mod_cons_predict, "Q6 > 0") # 0.17
+hypothesis(mod_cons_predict, "Q7 > 0") # 0.76
+
+# ocean empathy - Q8
+mod_emp_predict <- brm(Q8 ~ Q3 + Q4 + Q5 + Q6 + Q7 + (1|Group), data = d, iter = 3000, control = list(adapt_delta = 0.99))
+summary(mod_emp_predict)
+hypothesis(mod_emp_predict, "Q3 > 0") # 0.91
+hypothesis(mod_emp_predict, "Q4 > 0") # 0
+hypothesis(mod_emp_predict, "Q5 > 0") # 0.44
+hypothesis(mod_emp_predict, "Q6 > 0") # 0.76
+hypothesis(mod_emp_predict, "Q7 > 0") # 0.76
+
+```
+
+```{r plot-predict}
+# Q3 = sensory
+# Q4 = non-nausea
+# Q5 = usability
+# Q6 = immersion
+# Q7 = CGI Acceptance
+
+# Extract posterior draws
+posterior_mot <- as_draws_df(mod_mot_predict)
+
+# Focus on the coefficients for Q3, Q4, Q5, and Q6
+posterior_long_mot <- posterior_mot %>%
+  select(b_Q3, b_Q4, b_Q5, b_Q6, b_Q7) %>%
+  pivot_longer(cols = everything(), names_to = "Predictor", values_to = "Value") %>%
+  mutate(Predictor = recode(Predictor,
+                            b_Q3 = "Q3",
+                            b_Q4 = "Q4",
+                            b_Q5 = "Q5",
+                            b_Q6 = "Q6",
+                            b_Q7 = "Q7"))
+
+# Plot posterior distributions
+fig_mot_predict <- ggplot(posterior_long_mot %>% 
+                            mutate(Predictor = factor(case_when(Predictor == "Q3" ~ "Sensory Experience",
+                                                         Predictor == "Q4" ~ "Absence of Cybersickness",
+                                                         Predictor == "Q5" ~ "Ease of Use",
+                                                         Predictor == "Q7" ~ "CGI Acceptance",
+                                                         TRUE ~ "Presence"),
+                                   levels = c("CGI Acceptance", "Presence", "Ease of Use", 
+                                              "Absence of Cybersickness", "Sensory Experience"))),
+                          aes(x = Value, y = Predictor, fill = Predictor)) +
+  geom_density_ridges(alpha = 0.7) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "red") +
+  labs(x = "Motivation to learn",
+    y = "Predictor") +
+  scale_fill_viridis_d(name = "", option = "viridis", end = 1, begin = 0.95) +
+  guides(fill = "none") +
+  theme_classic() +
+  theme(axis.title.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.title.x = element_text(size = 8),
+        legend.background = element_rect(fill = NA)) +
+  guides(fill = "none")
+
+# consolidation
+
+# Extract posterior draws
+posterior_cons <- as_draws_df(mod_cons_predict)
+
+# Focus on the coefficients for Q3, Q4, Q5, and Q6
+posterior_long_cons <- posterior_cons %>%
+  select(b_Q3, b_Q4, b_Q5, b_Q6, b_Q7) %>%
+  pivot_longer(cols = everything(), names_to = "Predictor", values_to = "Value") %>%
+  mutate(Predictor = recode(Predictor,
+                            b_Q3 = "Q3",
+                            b_Q4 = "Q4",
+                            b_Q5 = "Q5",
+                            b_Q6 = "Q6",
+                            b_Q7 = "Q7"))
+
+# Plot posterior distributions
+fig_cons_predict <- ggplot(posterior_long_cons %>% 
+                            mutate(Predictor = factor(case_when(Predictor == "Q3" ~ "Sensory Experience",
+                                                         Predictor == "Q4" ~ "Absence of Cybersickness",
+                                                         Predictor == "Q5" ~ "Ease of Use",
+                                                         Predictor == "Q7" ~ "CGI Acceptance",
+                                                         TRUE ~ "Presence"),
+                                   levels = c("CGI Acceptance", "Presence", "Ease of Use", 
+                                              "Absence of Cybersickness", "Sensory Experience"))),
+                          aes(x = Value, y = Predictor, fill = Predictor)) +
+  geom_density_ridges(alpha = 0.7) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "red") +
+  labs(x = "Knowledge Consolidation",
+    y = "Predictor") +
+  scale_fill_viridis_d(name = "", option = "viridis", end = 0.9, begin = 0.8) +
+  guides(fill = "none") +
+  theme_classic() +
+  theme(axis.title.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.line.y = element_blank(),
+        axis.title.x = element_text(size = 8),
+        legend.background = element_rect(fill = NA)) +
+  guides(fill = "none") +
+  rremove("y.text")
+  
+# empathy
+posterior_emp <- as_draws_df(mod_emp_predict)
+
+# Focus on the coefficients for Q3, Q4, Q5, and Q6
+posterior_long_emp <- posterior_emp %>%
+  select(b_Q3, b_Q4, b_Q5, b_Q6, b_Q7) %>%
+  pivot_longer(cols = everything(), names_to = "Predictor", values_to = "Value") %>%
+  mutate(Predictor = recode(Predictor,
+                            b_Q3 = "Q3",
+                            b_Q4 = "Q4",
+                            b_Q5 = "Q5",
+                            b_Q6 = "Q6",
+                            b_Q7 = "Q7"))
+
+# Plot posterior distributions
+fig_emp_predict <- ggplot(posterior_long_emp %>% 
+                            mutate(Predictor = factor(case_when(Predictor == "Q3" ~ "Sensory Experience",
+                                                         Predictor == "Q4" ~ "Absence of Cybersickness",
+                                                         Predictor == "Q5" ~ "Ease of Use",
+                                                         Predictor == "Q7" ~ "CGI Acceptance",
+                                                         TRUE ~ "Presence"),
+                                   levels = c("CGI Acceptance", "Presence", "Ease of Use", 
+                                              "Absence of Cybersickness", "Sensory Experience"))), 
+                          aes(x = Value, y = Predictor, fill = Predictor)) +
+  geom_density_ridges(alpha = 0.7) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "red") +
+  labs(x = "PEB Motivation") +
+  scale_fill_viridis_d(name = "", option = "viridis", end = 0, begin = 0.2) +
+  theme_classic() +
+  theme(axis.title.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.line.y = element_blank(),
+        axis.title.x = element_text(size = 8),
+        legend.background = element_rect(fill = NA)) +
+  guides(fill = "none") +
+  rremove("y.text")
+
+fig_predict <- ggarrange(fig_mot_predict, fig_cons_predict, fig_emp_predict, widths = c(1.8, 1, 1), ncol = 3, nrow = 1)
+fig_predict
+
+ggsave("figures/Fig4.png", fig_predict, width = 6, height = 3, units = "in", dpi = 600)
+ggsave("figures/Fig4.pdf", fig_predict, width = 6, height = 3, units = "in", dpi = 600)
+```
+
+4. Real-life footage vs CGI (Q7)
+
+```{r mod-CGI}
+
+# preference for CGI or RLF
+
+mod_CGI <- brm(Q7 ~ 1 + (1|Group), data = d, iter = 3000, control = list(adapt_delta = 0.99))
+summary(mod_CGI)
+parnames(mod_CGI)
+hypothesis(mod_CGI, "Intercept > 5") #very divided
+sum(d$Q7 == 5, na.rm = T)
+5/46
+sum(d$Q7 > 5, na.rm = T)
+18/46
+sum(d$Q7 < 5, na.rm = T)
+22/46
+
+# effect of CGI or RLF on Q1 and Q8
+d_CGI <- d %>% 
+  mutate(Q7 = case_when(Q7 > 5 ~ "CGI", 
+                        Q7 < 5 ~ "Real", 
+                        TRUE ~ "No_opinion"))
+
+# motivation to learn - Q1
+mod_mot_CGI <- brm(Q1 ~ 0 + Q7 + (1|Group), data = d_CGI, iter = 3000, control = list(adapt_delta = 0.99))
+summary(mod_mot_CGI)
+parnames(mod_mot_CGI)
+hypothesis(mod_mot_CGI, "Q7Real > Q7CGI")
+
+# ocean empathy - Q8
+mod_emp_CGI <- brm(Q8 ~ 0 + Q7 + (1|Group), data = d_CGI, iter = 3000, control = list(adapt_delta = 0.99))
+summary(mod_emp_CGI)
+hypothesis(mod_emp_CGI, "Q7Real > Q7CGI") 
+
+```
