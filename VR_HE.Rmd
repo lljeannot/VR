@@ -26,7 +26,7 @@ library(ggpattern)
 
 ```{r data}
 
-d <- read.csv("VR_data.csv") %>% 
+d <- read.csv("data/VR_data.csv") %>% 
   mutate(Treatment = ifelse(Group %in% c(1, 3), "Treatment", "Control"))
 
 boxplot(d[3:10],ylim=c(0,10))
