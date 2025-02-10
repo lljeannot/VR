@@ -53,12 +53,12 @@ fig_init <- ggplot(d_long %>%
   mutate(name = factor(case_when(name == "Q1" ~ "Motivation to learn",
                           name == "Q2" ~ "Knowledge Consolidation",
                           name == "Q3" ~ "Sensory Experience",
-                          name == "Q4" ~ "Absence of Cybersickness",
+                          name == "Q4" ~ "Cybersickness",
                           name == "Q5" ~ "Ease of Use",
                           name == "Q6" ~ "Presence",
                           name == "Q7" ~ "CGI Acceptance",
                           TRUE ~ "PEB Motivation"),
-                       levels = c("Motivation to learn", "Knowledge Consolidation", "Sensory Experience", "Absence of Cybersickness", 
+                       levels = c("Motivation to learn", "Knowledge Consolidation", "Sensory Experience", "Cybersickness", 
                                   "Ease of Use", "Presence", "CGI Acceptance", "PEB Motivation"))),
   aes(x = name, y = value, fill = name)) +
   geom_hline(yintercept = 5, col = "red", linetype = "dashed") +
@@ -350,12 +350,12 @@ posterior_long_mot <- posterior_mot %>%
 # Plot posterior distributions
 fig_mot_predict <- ggplot(posterior_long_mot %>% 
                             mutate(Predictor = factor(case_when(Predictor == "Q3" ~ "Sensory Experience",
-                                                         Predictor == "Q4" ~ "Absence of Cybersickness",
+                                                         Predictor == "Q4" ~ "Cybersickness",
                                                          Predictor == "Q5" ~ "Ease of Use",
                                                          Predictor == "Q7" ~ "CGI Acceptance",
                                                          TRUE ~ "Presence"),
                                    levels = c("CGI Acceptance", "Presence", "Ease of Use", 
-                                              "Absence of Cybersickness", "Sensory Experience"))),
+                                              "Cybersickness", "Sensory Experience"))),
                           aes(x = Value, y = Predictor, fill = Predictor)) +
   geom_density_ridges(alpha = 0.7) +
   geom_vline(xintercept = 0, linetype = "dashed", color = "red") +
@@ -389,12 +389,12 @@ posterior_long_cons <- posterior_cons %>%
 # Plot posterior distributions
 fig_cons_predict <- ggplot(posterior_long_cons %>% 
                             mutate(Predictor = factor(case_when(Predictor == "Q3" ~ "Sensory Experience",
-                                                         Predictor == "Q4" ~ "Absence of Cybersickness",
+                                                         Predictor == "Q4" ~ "Cybersickness",
                                                          Predictor == "Q5" ~ "Ease of Use",
                                                          Predictor == "Q7" ~ "CGI Acceptance",
                                                          TRUE ~ "Presence"),
                                    levels = c("CGI Acceptance", "Presence", "Ease of Use", 
-                                              "Absence of Cybersickness", "Sensory Experience"))),
+                                              "Cybersickness", "Sensory Experience"))),
                           aes(x = Value, y = Predictor, fill = Predictor)) +
   geom_density_ridges(alpha = 0.7) +
   geom_vline(xintercept = 0, linetype = "dashed", color = "red") +
@@ -428,12 +428,12 @@ posterior_long_emp <- posterior_emp %>%
 # Plot posterior distributions
 fig_emp_predict <- ggplot(posterior_long_emp %>% 
                             mutate(Predictor = factor(case_when(Predictor == "Q3" ~ "Sensory Experience",
-                                                         Predictor == "Q4" ~ "Absence of Cybersickness",
+                                                         Predictor == "Q4" ~ "Cybersickness",
                                                          Predictor == "Q5" ~ "Ease of Use",
                                                          Predictor == "Q7" ~ "CGI Acceptance",
                                                          TRUE ~ "Presence"),
                                    levels = c("CGI Acceptance", "Presence", "Ease of Use", 
-                                              "Absence of Cybersickness", "Sensory Experience"))), 
+                                              "Cybersickness", "Sensory Experience"))), 
                           aes(x = Value, y = Predictor, fill = Predictor)) +
   geom_density_ridges(alpha = 0.7) +
   geom_vline(xintercept = 0, linetype = "dashed", color = "red") +
