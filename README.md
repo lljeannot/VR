@@ -2,7 +2,7 @@
 
 **This repository contains code and data presented in the article**:
   
-Keith, S.A., Jeannot, L.-L., McKinley, E., Fauville, G. & Woolsey, E.S. Enhancing motivation to learn about the ocean through VR underwater field skills in a Higher Education setting.
+Authors (anonymized). Enhancing motivation to learn about the ocean through VR underwater field skills in a Higher Education setting.
 
 
 ## 1. How to download this project?
